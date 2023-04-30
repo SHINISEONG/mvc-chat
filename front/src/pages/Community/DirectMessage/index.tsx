@@ -13,9 +13,11 @@ import useInput from '@/hooks/useInput';
 import axios from 'axios';
 import ChatList from '@/components/ChatList';
 import { mutate } from 'swr';
+import useIpStore from '@/hooks/useIpStore';
 
 const DirectMessage = () => {
-  const IPADDR = '192.168.0.10:8909';
+  const { expressSvrIp } = useIpStore();
+
   const { workspace, channel, id } = useParams() as {
     workspace: string;
     channel: string;
@@ -40,7 +42,7 @@ const DirectMessage = () => {
     setSize,
   } = useSWRInfinite<IChannel>(
     (index) =>
-      `http://${IPADDR}/api/workspaces/${workspace}/channels/${channel}/senderid/${id}/chats`,
+      `http://${expressSvrIp}/api/workspaces/${workspace}/channels/${channel}/senderid/${id}/chats`,
     fetcher
   );
 
@@ -58,7 +60,7 @@ const DirectMessage = () => {
       if (chat?.trim()) {
         axios
           .post(
-            `http://${IPADDR}/api/workspaces/${workspace}/channels/${channel}/senderid/${id}/chats`,
+            `http://${expressSvrIp}/api/workspaces/${workspace}/channels/${channel}/senderid/${id}/chats`,
             {
               content: chat,
             }
