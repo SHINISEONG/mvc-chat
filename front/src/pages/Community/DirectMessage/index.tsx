@@ -1,58 +1,79 @@
-import React, { useEffect, useState, FormEvent, useCallback } from 'react';
-import TextField from '@mui/material/TextField';
-import { Alert, Box, Button, Stack } from '@mui/material';
-import Grid from '@mui/material/Unstable_Grid2'; // Grid version 2
-import SendIcon from '@mui/icons-material/Send';
+import { useEffect, useState, FormEvent, useCallback, useRef } from 'react';
 import { useParams } from 'react-router';
 import useSocket from '@/hooks/useSocket';
 import useSWRInfinite from 'swr/infinite';
 import fetcher from '@utils/fetcher';
-import { IChannel } from '@/typings/db';
+import { IChat } from '@/typings/db';
 import ChatBox from '@/components/ChatBox';
 import useInput from '@/hooks/useInput';
 import axios from 'axios';
 import ChatList from '@/components/ChatList';
-import { mutate } from 'swr';
-import useIpStore from '@/hooks/useIpStore';
+
+import useSWR from 'swr';
+
+import { Box } from '@mui/material';
 
 const DirectMessage = () => {
-  const { expressSvrIp } = useIpStore();
+  const { chattype, channel } = useParams();
+  const boxRef = useRef<HTMLDivElement>(null);
 
-  const { workspace, channel, id } = useParams() as {
-    workspace: string;
-    channel: string;
-    id: string;
-  };
+  const { data: myData } = useSWR(
+    `http://${import.meta.env.VITE_SPRING_SVR_URL}:8080/api/users/session`,
+    fetcher
+  );
+  const [myChannel, setMyChannel] = useState(myData?.userId);
+  useEffect(() => {
+    if (myData?.role === 'admin') {
+      setMyChannel(channel);
+    }
+  }, [myData, channel]);
 
-  console.log(workspace, channel);
-  const [socket, discconect] = useSocket(workspace);
+  console.log(chattype);
+  const [socket] = useSocket(chattype);
 
   useEffect(() => {
-    if (channel && socket) {
-      socket?.emit('login', {
-        id: channel,
-        channel: channel,
+    if (myChannel && socket) {
+      console.log('login?');
+      console.log('id', myData.userId);
+      console.log('channel', myChannel);
+      socket.emit('login', {
+        id: myData.userId,
+        channel: myChannel,
       });
     }
-  }, [socket, channel]);
+  }, [socket, myChannel, myData]);
 
   const {
     data: chatData,
     mutate: chatMutate,
-    setSize,
-  } = useSWRInfinite<IChannel>(
-    (index) =>
-      `http://${expressSvrIp}/api/workspaces/${workspace}/channels/${channel}/senderid/${id}/chats`,
+    // setSize,
+  } = useSWRInfinite<IChat>(
+    () =>
+      `http://${
+        import.meta.env.VITE_SPRING_SVR_URL
+      }:8909/api/chattypes/${chattype}/channels/${myChannel}/chats`,
     fetcher
   );
 
   const [chat, onChangeChat, setChat] = useInput('');
 
-  useEffect(() => {
-    return () => {
-      discconect();
-    };
-  }, [workspace, discconect]);
+  const scrollToBottom = useCallback(() => {
+    if (boxRef.current) {
+      boxRef.current.scrollTop = boxRef.current.scrollHeight;
+      console.log(
+        boxRef.current.scrollTop,
+        boxRef.current.scrollHeight,
+        boxRef.current.clientHeight
+      );
+      window.scrollTo({ top: boxRef.current.scrollHeight });
+    }
+  }, [boxRef, chatData, chat]);
+
+  // useEffect(() => {
+  //   return () => {
+  //     discconect();
+  //   };
+  // }, [chattype, discconect]);
 
   const onSubmitForm = useCallback(
     (e: FormEvent) => {
@@ -60,10 +81,15 @@ const DirectMessage = () => {
       if (chat?.trim()) {
         axios
           .post(
-            `http://${expressSvrIp}/api/workspaces/${workspace}/channels/${channel}/senderid/${id}/chats`,
+            `http://${
+              import.meta.env.VITE_SPRING_SVR_URL
+            }:8909/api/chattypes/${chattype}/channels/${myChannel}/chats`,
             {
+              userId: myData.userId,
+              channel: myChannel,
               content: chat,
-            }
+            },
+            { withCredentials: true }
           )
           .then(() => {
             chatMutate();
@@ -76,10 +102,9 @@ const DirectMessage = () => {
     },
     [chat]
   );
-
   const onMessage = useCallback(() => {
     chatMutate();
-  }, []);
+  }, [chatMutate, scrollToBottom]);
 
   useEffect(() => {
     socket?.on('message', onMessage);
@@ -88,24 +113,32 @@ const DirectMessage = () => {
     };
   }, [socket, onMessage]);
 
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatData, scrollToBottom]);
+
   if (
-    workspace === undefined ||
-    channel === undefined ||
+    chattype === undefined ||
+    myChannel === undefined ||
     chatData === undefined
   ) {
-    return <div>'로딩중'</div>;
+    return null;
   }
   console.log(chatData);
 
   return (
-    <>
-      <ChatList chatData={chatData} />
-      <ChatBox
-        chat={chat}
-        onSubmitForm={onSubmitForm}
-        onChangeChat={onChangeChat}
-      />
-    </>
+    <div ref={boxRef}>
+      <Box>
+        <ChatList chatData={chatData} />
+        <Box sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }}>
+          <ChatBox
+            chat={chat}
+            onSubmitForm={onSubmitForm}
+            onChangeChat={onChangeChat}
+          />
+        </Box>
+      </Box>
+    </div>
   );
 };
 

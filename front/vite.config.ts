@@ -8,12 +8,13 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://192.168.0.10:8909',
+        target: 'http://192.168.45.246:8080',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+        ws: true,
       },
       '/socket.io': {
-        target: 'http://192.168.0.10:8909',
+        target: 'http://192.168.45.246:8909',
         changeOrigin: true,
         ws: true,
       },

@@ -1,30 +1,22 @@
 import Chat from '@components/Chat';
-import { Alert, Box, Button, Stack } from '@mui/material';
-import Grid from '@mui/material/Unstable_Grid2/Grid2';
-import { IDM, IChat, IChannel } from '@typings/db';
-import React, {
-  useCallback,
-  forwardRef,
-  RefObject,
-  MutableRefObject,
-  useRef,
-  FC,
-} from 'react';
+import { Box } from '@mui/material';
+
+import { IChat } from '@typings/db';
+import { FC } from 'react';
 
 interface Props {
-  chatData: IChannel[];
+  chatData: IChat[];
 }
 
 const ChatList: FC<Props> = ({ chatData }) => {
   return (
     <Box
-      className="class"
       sx={{
-        height: 500,
-        overflowX: 'scroll',
+        marginTop: '64px',
+        marginBottom: '64px',
       }}
     >
-      {chatData[0].map((chat, i) => (
+      {chatData[0].map((chat: IChat) => (
         <Chat key={chat._id} data={chat} />
       ))}
     </Box>

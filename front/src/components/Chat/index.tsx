@@ -1,28 +1,37 @@
-import React, { FC, useState } from 'react';
+import { FC } from 'react';
 
-import { Alert, Box, Button, Stack } from '@mui/material';
+import { Alert, Avatar, Stack, Typography } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2'; // Grid version 2
 import { IChannel } from '@/typings/db';
-import { useParams } from 'react-router';
+import useSWR from 'swr';
+import fetcher from '@/utils/fetcher';
 interface Props {
   data: IChannel;
   key: string;
 }
 
 const Chat: FC<Props> = ({ data }) => {
-  const { id } = useParams();
+  const { data: myData } = useSWR(
+    `http://${import.meta.env.VITE_SPRING_SVR_URL}:8080/api/users/session`,
+    fetcher
+  );
+
   let messageColor = 'gray';
   let messageBackColor = 'lightgray';
-  let offset = 0.2;
-  if (id === data.userId) {
-    messageBackColor = 'lightblue';
-    messageColor = 'darkblue';
-    offset = 6;
+  let offset = 0.3;
+  if (myData?.userId === data.userId) {
+    messageBackColor = 'primary';
+    messageColor = 'darkgreen';
+    offset = 7;
   }
   return (
-    <Stack>
-      {id !== data.userId && data.userId}
-      <Grid container xsOffset={offset} mdOffset={offset} xs={6} md={6}>
+    <Grid container xsOffset={offset} mdOffset={offset} xs={5} md={5}>
+      <Stack direction={'row'} sx={{ maxWidth: '100%', minWidth: '100%' }}>
+        <Stack>
+          {myData?.userId !== data.userId && <Avatar alt="Remy Sharp" />}
+          {myData?.userId !== data.userId && data.userId}
+        </Stack>
+
         <Alert
           sx={{
             margin: 1,
@@ -34,10 +43,14 @@ const Chat: FC<Props> = ({ data }) => {
           }}
           icon={false}
         >
-          {data.content}
+          {data.content.split('\n').map((line, index) => (
+            <Typography key={index} component="div">
+              {line}
+            </Typography>
+          ))}
         </Alert>
-      </Grid>
-    </Stack>
+      </Stack>
+    </Grid>
   );
 };
 

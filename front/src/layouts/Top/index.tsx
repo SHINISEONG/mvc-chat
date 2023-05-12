@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
@@ -11,36 +11,81 @@ import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
-import { Link, Navigate, Outlet } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import useSWR from 'swr';
-import useIpStore from '@/hooks/useIpStore';
 import fetcher from '@/utils/fetcher';
+import axios from 'axios';
 
-const pages = [
-  '회원관리',
-  '상품관리',
-  '주문관리',
-  'About Us',
-  'Products',
-  'Community',
-];
-const settings = ['내 정보 보기', '주문내역', '로그아웃'];
-
+const settings = ['내 정보 보기', '주문내역', 'Sign Out'];
 function Top() {
+  const [pages, setPages] = useState([
+    '회원관리',
+    '상품관리',
+    '주문관리',
+    'About Us',
+    'Products',
+    'Community',
+  ]);
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(
     null
   );
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
     null
   );
+  const [onClickPageNavFunctions, setOnClickPageNavFunctions] = useState([
+    () => {},
+  ]);
 
-  const { springSvrIp } = useIpStore();
-
-  const { data: myData } = useSWR(
-    `http://${springSvrIp}:8080/api/users/`,
+  const { data: myData, mutate: mutateMe } = useSWR(
+    `http://${import.meta.env.VITE_SPRING_SVR_URL}:8080/api/users/session`,
     fetcher
   );
+
+  const navigate = useNavigate();
+  const onClickManageUsers = useCallback(() => {
+    navigate('/manage/user/list');
+  }, []);
+  const onClickManageProducts = useCallback(() => {
+    navigate('/manage/product/list');
+  }, []);
+  const onClickManagePurchases = useCallback(() => {
+    navigate('/manage/purchase');
+  }, []);
+  const onClickAboutUs = useCallback(() => {
+    navigate('/aboutus');
+  }, []);
+  const onClickProducts = useCallback(() => {
+    navigate('/product/list');
+  }, []);
+  const onClickCommunity = useCallback(() => {
+    navigate('/community');
+  }, []);
+  const onClickMyInfo = useCallback(() => {}, []);
+  const onClickPurchaseHistory = useCallback(() => {}, []);
+  const onClickSignOut = useCallback(() => {
+    axios
+      .delete(
+        `http://${import.meta.env.VITE_SPRING_SVR_URL}:8080/api/users/session`,
+        {
+          withCredentials: true,
+        }
+      )
+      .then((response) => {
+        console.log(response.data);
+        mutateMe();
+        navigate('/');
+      })
+      .catch((error) => {
+        console.dir(error);
+      });
+  }, []);
+
+  const settingsFucntion = [
+    onClickMyInfo,
+    onClickPurchaseHistory,
+    onClickSignOut,
+  ];
 
   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -57,9 +102,37 @@ function Top() {
     setAnchorElUser(null);
   };
 
+  useEffect(() => {
+    if (myData?.role !== 'admin') {
+      setPages(['About Us', 'Products', 'Community']);
+      setOnClickPageNavFunctions([
+        onClickAboutUs,
+        onClickProducts,
+        onClickCommunity,
+      ]);
+    } else {
+      setPages([
+        '회원관리',
+        '상품관리',
+        '주문관리',
+        'About Us',
+        'Products',
+        'Community',
+      ]);
+      setOnClickPageNavFunctions([
+        onClickManageUsers,
+        onClickManageProducts,
+        onClickManagePurchases,
+        onClickAboutUs,
+        onClickProducts,
+        onClickCommunity,
+      ]);
+    }
+  }, [myData]);
+
   return (
     <>
-      <AppBar position="static" color="primary">
+      <AppBar position="fixed" color="primary">
         <Container maxWidth="xl">
           <Toolbar disableGutters>
             <Typography
@@ -107,8 +180,8 @@ function Top() {
                   display: { xs: 'block', md: 'none' },
                 }}
               >
-                {pages.map((page) => (
-                  <MenuItem key={page} onClick={handleCloseNavMenu}>
+                {pages.map((page, i) => (
+                  <MenuItem key={page} onClick={onClickPageNavFunctions[i]}>
                     <Typography textAlign="center">{page}</Typography>
                   </MenuItem>
                 ))}
@@ -128,13 +201,13 @@ function Top() {
                 textDecoration: 'none',
               }}
             >
-              MVC Shop
+              React#
             </Typography>
             <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
               {pages.map((page, i) => (
                 <Button
                   key={i}
-                  onClick={handleCloseNavMenu}
+                  onClick={onClickPageNavFunctions[i]}
                   sx={{ my: 2, color: 'white', display: 'block' }}
                 >
                   {page}
@@ -167,21 +240,26 @@ function Top() {
                 open={Boolean(anchorElUser)}
                 onClose={handleCloseUserMenu}
               >
-                {myData &&
-                  settings.map((setting) => (
-                    <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                      <Typography textAlign="center">{setting}</Typography>
+                {myData?.userId &&
+                  settings.map((setting, i) => (
+                    <MenuItem key={setting}>
+                      <Typography
+                        textAlign="center"
+                        onClick={settingsFucntion[i]}
+                      >
+                        {setting}
+                      </Typography>
                     </MenuItem>
                   ))}
-                {!myData && (
+                {!myData?.userId && (
                   <MenuItem onClick={handleCloseUserMenu}>
                     <Typography
                       textAlign="center"
-                      to="/users/signin"
+                      to="/user/signin"
                       component={Link}
                       sx={{ color: 'inherit', textDecoration: 'none' }}
                     >
-                      SignIn
+                      Sign In
                     </Typography>
                   </MenuItem>
                 )}
@@ -191,7 +269,6 @@ function Top() {
         </Container>
       </AppBar>
       <Outlet />
-      {/* <Navigate replace to="/main" /> */}
     </>
   );
 }

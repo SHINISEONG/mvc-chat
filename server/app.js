@@ -18,6 +18,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: `http://${REACT_IP_ADDR}:5173`,
+    credentials: true,
     methods: ['GET', 'POST'],
   })
 );

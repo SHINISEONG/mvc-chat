@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { Link } from 'react-router-dom';
-import useIpStore from '@/hooks/useIpStore';
+
+import { Link, Navigate } from 'react-router-dom';
+import axios from 'axios';
+import useSWR from 'swr';
+import fetcher from '@/utils/fetcher';
+import { Backdrop } from '@mui/material';
 import useInput from '@/hooks/useInput';
 
 function Copyright(props: any) {
@@ -34,25 +35,73 @@ function Copyright(props: any) {
   );
 }
 
-const theme = createTheme();
-
 export default function SignIn() {
-  const { springSvrIp } = useIpStore();
-  const [userId, onChangeUserId, setUserId] = useInput('');
-  const [password, onChangePassword, setPassword] = useInput('');
+  const [userId, onChangeUserId] = useInput('');
+  const [password, onChangePassword] = useInput('');
   const [signInErrorMsg, setSignInErrorMsg] = useState();
+  const [backdropOpen] = useState(true);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    console.log({
-      userId: data.get('email'),
-      password: data.get('password'),
-    });
-  };
+  const { data: myData, mutate: mutateMe } = useSWR(
+    `http://${import.meta.env.VITE_SPRING_SVR_URL}:8080/api/users/session`,
+    fetcher
+  );
 
+  console.log(
+    `${import.meta.env.VITE_SPRING_SVR_URL}/api/users/session`,
+    myData
+  );
+
+  const handleSubmit = useCallback(
+    (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const data = new FormData(event.currentTarget);
+      console.log({
+        userId: data.get('userId'),
+        password: data.get('password'),
+      });
+
+      axios
+        .post(
+          `http://${
+            import.meta.env.VITE_SPRING_SVR_URL
+          }:8080/api/users/session`,
+          data,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            withCredentials: true,
+          }
+        )
+        .then((response) => {
+          setSignInErrorMsg(response.data);
+          console.log(response.data);
+          mutateMe();
+        })
+        .catch((error) => {
+          console.log(error);
+          setSignInErrorMsg(error.response.data);
+        });
+    },
+    [userId, password]
+  );
+  if (myData === undefined) {
+    return (
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={backdropOpen}
+      />
+    );
+  }
+  if (myData.userId !== undefined && myData.userId !== null) {
+    return <Navigate replace to="/" />;
+  }
   return (
-    <Grid container component="main" sx={{ height: '100vh' }}>
+    <Grid
+      container
+      component="main"
+      sx={{ height: '100vh', marginTop: '64px' }}
+    >
       <CssBaseline />
       <Grid
         item
@@ -85,7 +134,7 @@ export default function SignIn() {
             <LockOutlinedIcon />
           </Avatar>
           <Typography component="h1" variant="h5" color={'primary'}>
-            Sign in
+            Sign In
           </Typography>
           <Box
             component="form"
@@ -120,11 +169,14 @@ export default function SignIn() {
               control={<Checkbox value="remember" color="primary" />}
               label="Remember me"
             /> */}
+            <Typography variant="overline" color="secondary">
+              {signInErrorMsg}
+            </Typography>
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={{ mt: 3, mb: 2, marginTop: 1 }}
             >
               Sign In
             </Button>

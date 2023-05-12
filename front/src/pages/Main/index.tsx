@@ -1,8 +1,6 @@
-import * as React from 'react';
 import ImageList from '@mui/material/ImageList';
 import ImageListItem from '@mui/material/ImageListItem';
 import Container from '@mui/material/Container';
-import Box from '@mui/material/Box';
 
 function srcset(image: string, size: number, rows = 1, cols = 1) {
   return {
@@ -13,7 +11,7 @@ function srcset(image: string, size: number, rows = 1, cols = 1) {
   };
 }
 
-export default function QuiltedImageList() {
+export default function Main() {
   return (
     <Container
       sx={{
@@ -22,6 +20,7 @@ export default function QuiltedImageList() {
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'clip',
+        marginTop: '64px',
       }}
     >
       <ImageList

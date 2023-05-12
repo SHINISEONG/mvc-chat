@@ -1,10 +1,26 @@
 export interface IUser {
-  id: number;
-  nickname: string;
+  userId: string;
+  userName: string;
+  password: string;
+  role: string;
+  ssn: string;
+  phone: string;
+  addr: string;
   email: string;
-  Workspaces: IWorkspace[];
+  regDate: Date;
+  cartTranNo: number;
 }
-
+export interface IProduct {
+  prodNo: number;
+  fileName: string;
+  price: number;
+  prodDetail: string;
+  prodName: string;
+  regDate: Date;
+  stock: number;
+  fileNames: string[];
+  cartQuantity: number;
+}
 export interface IUserWithOnline extends IUser {
   online: boolean;
 }
@@ -20,7 +36,7 @@ export interface IChannel {
 
 export interface IChat {
   // 채널의 채팅
-  id: number;
+  _id: string;
   UserId: number;
   User: IUser; // 보낸 사람
   content: string;

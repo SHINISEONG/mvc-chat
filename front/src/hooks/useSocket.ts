@@ -1,35 +1,34 @@
-import io from 'socket.io-client';
+import io, { Socket } from 'socket.io-client';
+
 import { useCallback } from 'react';
 
-const backUrl = 'http://192.168.0.10:8909';
+const backUrl = `http://${import.meta.env.VITE_SPRING_SVR_URL}:8909`;
 
-const sockets: { [key: string]: SocketIOClient.Socket } = {};
-const useSocket = (
-  workspace?: string
-): [SocketIOClient.Socket | undefined, () => void] => {
-  console.log('rerender', workspace);
+const sockets: { [key: string]: Socket } = {};
+const useSocket = (chattype?: string): [Socket | undefined, () => void] => {
+  console.log('rerender', chattype);
 
   const disconnect = useCallback(() => {
-    if (workspace) {
-      sockets[workspace].disconnect();
-      delete sockets[workspace];
+    if (chattype) {
+      sockets[chattype].disconnect();
+      delete sockets[chattype];
     }
-  }, [workspace]);
+  }, [chattype]);
 
-  if (!workspace) {
+  if (!chattype) {
     return [undefined, disconnect];
   }
 
-  if (!sockets[workspace]) {
-    console.log(`${backUrl}/ws-${workspace}`);
+  if (!sockets[chattype]) {
+    console.log(`${backUrl}/ct-${chattype}`);
 
-    sockets[workspace] = io.connect(`${backUrl}/ws-${workspace}`, {
+    sockets[chattype] = io(`${backUrl}/ct-${chattype}`, {
       transports: ['websocket'],
       // credentials: true,
     });
   }
 
-  return [sockets[workspace], disconnect];
+  return [sockets[chattype], disconnect];
 };
 
 export default useSocket;

@@ -13,7 +13,7 @@ module.exports = (server, app) => {
   app.set('io', io);
   app.set('onlineMap', onlineMap);
 
-  const dynamicNsp = io.of(/^\/ws-.+$/).on('connect', (socket) => {
+  const dynamicNsp = io.of(/^\/ct-.+$/).on('connect', (socket) => {
     console.log('on connect');
     const newNamespace = socket.nsp;
 

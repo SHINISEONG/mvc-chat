@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
@@ -23,7 +23,7 @@ export default function InputName() {
       password: data.get('password'),
     });
   };
-  const [nickname, onChangeNickname, setNickname] = useInput('');
+  const [nickname, onChangeNickname] = useInput('');
 
   return (
     <ThemeProvider theme={theme}>

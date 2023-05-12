@@ -1,17 +1,9 @@
-import React, {
-  FormEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  FC,
-  ChangeEvent,
-  KeyboardEvent,
-} from 'react';
+import { FormEvent, useCallback, FC, ChangeEvent, KeyboardEvent } from 'react';
 import { Button, Stack } from '@mui/material';
 import TextField from '@mui/material/TextField';
 import SendIcon from '@mui/icons-material/Send';
-import autosize from 'autosize';
 
+import LeftDrawer from '../LeftDrawer';
 interface Props {
   chat: string;
   onSubmitForm: (e: FormEvent) => void;
@@ -19,12 +11,7 @@ interface Props {
   placeholder?: string;
 }
 
-const ChatBox: FC<Props> = ({
-  chat,
-  onSubmitForm,
-  onChangeChat,
-  placeholder,
-}) => {
+const ChatBox: FC<Props> = ({ chat, onSubmitForm, onChangeChat }) => {
   // const textareaRef: React.RefObject<HTMLDivElement> =
   //   useRef<HTMLDivElement>(null);
   // useEffect(() => {
@@ -44,23 +31,33 @@ const ChatBox: FC<Props> = ({
     },
     [onSubmitForm]
   );
+  const onClickChat = useCallback(
+    (e: FormEvent) => {
+      console.log(e);
 
+      e.preventDefault();
+      onSubmitForm(e);
+    },
+    [onSubmitForm]
+  );
   return (
     <Stack spacing={0} direction="row">
+      <LeftDrawer />
       <TextField
         id="outlined-multiline-flexible"
         multiline
         autoFocus
         maxRows={4}
         fullWidth
-        variant="standard"
+        variant="filled"
         value={chat}
         onChange={onChangeChat}
         onKeyDown={onKeydownChat}
+
         //ref={textareaRef}
       />
 
-      <Button>
+      <Button variant="contained" onClick={onClickChat}>
         <SendIcon fontSize="large" />
       </Button>
     </Stack>
