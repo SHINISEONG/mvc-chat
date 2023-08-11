@@ -1,5 +1,7 @@
 # React Code & Express API Server
 
+![Imgur](https://i.imgur.com/hzhQt8Z.png)
+
 ******************요약 및 의의******************
 
 - 클론 코딩에서 배운 리액트 환경 구성 및 채팅 구현 응용을 위한 프로젝트
